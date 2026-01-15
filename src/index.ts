@@ -1,8 +1,38 @@
-import "dotenv/config";
-import { Telegraf } from "telegraf";
-const BOT_TOKEN = process.env.ACCESS_TOKEN_TELEGRAM_BOT;
+import "dotenv/config"; // Carga las variables del .env
+import { bot } from "./bot/index.js";
+import { setupHandlers } from "./bot/handlers/index.js";
+import { setupActions } from "./bot/actions/index.js";
 
-if (BOT_TOKEN === undefined || BOT_TOKEN === "") {
-  throw new Error("BOT_TOKEN no encontrado. Revisá tu archivo .env");
+/**
+ * Función principal para arrancar el bot
+ */
+async function initBot() {
+  try {
+    // 1. Cargamos los Handlers (Comandos y Texto)
+    setupHandlers();
+    console.log("📝 Handlers registrados");
+
+    // 2. Cargamos las Actions (Botones y Callbacks)
+    setupActions();
+    console.log("🔘 Actions registradas");
+
+    // 3. Configuramos el menú de comandos en la interfaz de Telegram
+    await bot.telegram.setMyCommands([
+      { command: "start", description: "🚀 Iniciar el bot" },
+      { command: "help", description: "📖 Guía de uso" },
+      { command: "about", description: "ℹ️ Sobre este proyecto" }, // ESTO es lo que activa la sugerencia
+    ]);
+    await bot.launch();
+    console.log("🚀 ¡Bot de Música Online y escuchando!");
+  } catch (error) {
+    console.error("❌ Error al iniciar el bot:", error);
+    process.exit(1);
+  }
 }
-export const bot = new Telegraf(BOT_TOKEN);
+
+// Ejecutamos el inicio
+initBot();
+
+// Manejo de cierre limpio para evitar que el bot quede "colgado" en Telegram
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
