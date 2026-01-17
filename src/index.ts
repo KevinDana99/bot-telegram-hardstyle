@@ -1,11 +1,8 @@
-import "dotenv/config"; // Carga las variables del .env
+import "dotenv/config";
 import { bot } from "./bot/index.js";
 import { setupHandlers } from "./bot/handlers/index.js";
 import { setupActions } from "./bot/actions/index.js";
 
-/**
- * Función principal para arrancar el bot
- */
 async function initBot() {
   try {
     // 1. Cargamos los Handlers (Comandos y Texto)
@@ -30,9 +27,7 @@ async function initBot() {
   }
 }
 
-// Ejecutamos el inicio
 initBot();
 
-// Manejo de cierre limpio para evitar que el bot quede "colgado" en Telegram
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
