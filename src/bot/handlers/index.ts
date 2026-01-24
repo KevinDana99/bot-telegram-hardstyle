@@ -1,5 +1,5 @@
 import { Markup } from "telegraf";
-import { findMusicByName } from "../../services/music";
+import { search } from "../../services/music";
 import { bot } from "../index";
 import { aboutCommand, helpCommand, startCommand } from "./commands";
 
@@ -16,15 +16,14 @@ export const setupHandlers = () => {
     }
     await ctx.reply(`🔎 Buscando música relacionada con: "${message}"...`);
     try {
-      const results = await findMusicByName(message);
-      const buttons = results
-        .slice(0, 5)
-        .map((result) => [
-          Markup.button.callback(
-            `🎵 ${result.title} - ${result.artist.name}`,
-            `info_${result.id}`
-          ),
-        ]);
+      const results = await search(message);
+
+      const buttons = results.map((result) => [
+        Markup.button.callback(
+          `🎵 ${result.title} - ${result.artist}`,
+          `info_${result.id}`
+        ),
+      ]);
       await ctx.reply(
         "estos son tus resultados de busqueda:",
         Markup.inlineKeyboard(buttons)
@@ -32,7 +31,5 @@ export const setupHandlers = () => {
     } catch (err) {
       await ctx.reply(`${err}`);
     }
-    console.log(ctx);
   });
 };
-//"Ups, algo salió mal con la búsqueda."
