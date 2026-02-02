@@ -22,31 +22,20 @@ export const findById = async (id: string) => {
   return result[0];
 };
 export const download = async (artist: string, title: string) => {
-  const url = `http://127.0.0.1:3001/api/music/download?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
-
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("La API falló");
-
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("No se pudo obtener el cuerpo de la respuesta");
-
-  const chunks: Uint8Array[] = [];
-
-  // Bucle infinito hasta que el servidor haga res.end()
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      // Opcional: console.log(`Recibiendo chunk de ${value.length} bytes...`);
-    }
+  try {
+    const url = `https://e100c0fa6055.ngrok-free.app/api/music/download?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const soundTrack = Buffer.from(arrayBuffer);
+    const durationTrack = parseInt(
+      response.headers.get("duration-track") || "0",
+    );
+    if (!response.ok) throw new Error("La API falló al dar la respuesta");
+    if (!response.body)
+      throw new Error("No se pudo obtener el cuerpo de la respuesta");
+    return { soundTrack, durationTrack };
+  } catch (err) {
+    console.error(err);
+    throw err;
   }
-
-  // Unimos todos los trozos en un solo Buffer sólido
-  const finalBuffer = Buffer.concat(chunks.map((c) => Buffer.from(c)));
-
-  console.log(
-    `📏 Tamaño final capturado por el Bot: ${finalBuffer.length} bytes`,
-  );
-  return finalBuffer;
 };

@@ -27,7 +27,8 @@ export const setupActions = () => {
 
       // 2. IMPORTANTE: Lanzamos la descarga SIN 'await' para que el handler de Telegraf termine.
       // Esto evita el Timeout de 90 segundos.
-      ejecutarDescargaSegundaPlano(
+
+      const downloadTime = downloadProcess(
         ctx,
         artist.trim(),
         title.trim(),
@@ -41,7 +42,7 @@ export const setupActions = () => {
 };
 
 // Función separada para manejar la descarga pesada
-async function ejecutarDescargaSegundaPlano(
+async function downloadProcess(
   ctx: any,
   artist: string,
   title: string,
@@ -49,20 +50,21 @@ async function ejecutarDescargaSegundaPlano(
 ) {
   try {
     const audioBuffer = await download(artist, title);
-
-    if (audioBuffer && audioBuffer.length > 0) {
-      // 3. Enviamos el audio con un nombre de archivo explícito
+    if (audioBuffer && audioBuffer.soundTrack.length > 0) {
+      const desctiption = `${artist} - ${title}`;
       await ctx.replyWithAudio(
-        { source: audioBuffer, filename: `${title}.mp3` },
         {
-          title: title,
+          source: audioBuffer.soundTrack,
+          filename: `${desctiption}.mp3`,
+        },
+        {
+          duration: audioBuffer.durationTrack,
+          title: desctiption,
           performer: artist,
           caption: `✅ ¡Listo! <b>${artist} - ${title}</b>`,
           parse_mode: "HTML",
         },
       );
-
-      // Borramos el mensaje de "Procesando" para limpiar el chat
       await ctx.deleteMessage(msgId).catch(() => {});
     } else {
       await ctx.reply("❌ El audio llegó vacío. Intenta de nuevo.");
