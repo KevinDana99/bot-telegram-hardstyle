@@ -11,23 +11,28 @@ export const setupHandlers = () => {
     const message = ctx.message.text;
     if (message.startsWith("/")) {
       return ctx.reply(
-        "❌ Ese comando no existe. Escribí /help para ver qué puedo hacer."
+        "❌ Ese comando no existe. Escribí /help para ver qué puedo hacer.",
       );
     }
     await ctx.reply(`🔎 Buscando música relacionada con: "${message}"...`);
     try {
-      const results = await search(message);
+      const results: [] = await search(message);
+      if (results.length === 0) {
+        await ctx.reply("❌ No se encontro ningun resultado para tu busqueda");
+        return;
+      } else {
+        const buttons = results?.map((result) => [
+          Markup.button.callback(
+            `🎵 ${result.title} - ${result.artist}`,
+            `info_${result.id}`,
+          ),
+        ]);
 
-      const buttons = results.map((result) => [
-        Markup.button.callback(
-          `🎵 ${result.title} - ${result.artist}`,
-          `info_${result.id}`
-        ),
-      ]);
-      await ctx.reply(
-        "estos son tus resultados de busqueda:",
-        Markup.inlineKeyboard(buttons)
-      );
+        await ctx.reply(
+          "estos son tus resultados de busqueda:",
+          Markup.inlineKeyboard(buttons),
+        );
+      }
     } catch (err) {
       await ctx.reply(`${err}`);
     }

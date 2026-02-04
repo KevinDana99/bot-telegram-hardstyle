@@ -19,21 +19,7 @@ export const setupActions = () => {
         ? rawName.split("-")
         : ["Hardstyle", rawName];
 
-      // 1. Notificamos éxito del clic inmediatamente
-      await ctx.answerCbQuery("🎧 Preparando descarga...");
-      const processingMsg = await ctx.reply(
-        `⏳ Descargando: ${rawName}...\nEsto puede tardar un minuto.`,
-      );
-
-      // 2. IMPORTANTE: Lanzamos la descarga SIN 'await' para que el handler de Telegraf termine.
-      // Esto evita el Timeout de 90 segundos.
-
-      const downloadTime = downloadProcess(
-        ctx,
-        artist.trim(),
-        title.trim(),
-        processingMsg.message_id,
-      );
+      downloadProcess(ctx, artist.trim(), title.trim());
     } catch (error) {
       console.error("Error en la acción info:", error);
       await ctx.reply("❌ Error al iniciar la descarga.");
@@ -42,15 +28,11 @@ export const setupActions = () => {
 };
 
 // Función separada para manejar la descarga pesada
-async function downloadProcess(
-  ctx: any,
-  artist: string,
-  title: string,
-  msgId: number,
-) {
+async function downloadProcess(ctx: any, artist: string, title: string) {
   try {
-    const audioBuffer = await download(artist, title);
+    const audioBuffer = await download(artist, title, ctx);
     if (audioBuffer && audioBuffer.soundTrack.length > 0) {
+      console.log({ audioBuffer });
       const desctiption = `${artist} - ${title}`;
       await ctx.replyWithAudio(
         {
@@ -65,7 +47,6 @@ async function downloadProcess(
           parse_mode: "HTML",
         },
       );
-      await ctx.deleteMessage(msgId).catch(() => {});
     } else {
       await ctx.reply("❌ El audio llegó vacío. Intenta de nuevo.");
     }
