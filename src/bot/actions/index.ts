@@ -1,4 +1,4 @@
-import { download } from "../../services/music/index.js";
+import { download } from "../../services/music-v2/index.js";
 import { bot } from "../index.js";
 
 export const setupActions = () => {
@@ -30,17 +30,16 @@ export const setupActions = () => {
 // Función separada para manejar la descarga pesada
 async function downloadProcess(ctx: any, artist: string, title: string) {
   try {
-    const audioBuffer = await download(artist, title, ctx);
-    if (audioBuffer && audioBuffer.soundTrack.length > 0) {
-      console.log({ audioBuffer });
+    const audio = await download(artist, title, ctx);
+    if (audio) {
       const desctiption = `${artist} - ${title}`;
       await ctx.replyWithAudio(
         {
-          source: audioBuffer.soundTrack,
+          url: audio.soundTrack,
           filename: `${desctiption}.mp3`,
         },
         {
-          duration: audioBuffer.durationTrack,
+          duration: audio.durationTrack,
           title: desctiption,
           performer: artist,
           caption: `✅ ¡Listo! <b>${artist} - ${title}</b>`,

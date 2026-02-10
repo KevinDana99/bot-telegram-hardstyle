@@ -1,6 +1,5 @@
 import axios from "axios";
-import config from "../../config";
-let results = [] as any;
+import config from "../../config/index.js";
 interface DownloadResult {
   soundTrack: Buffer;
   durationTrack: number;
@@ -11,16 +10,10 @@ export const search = async (query: string) => {
       `${config.API_HOST}/api/music/search?q=${encodeURIComponent(query)}`,
     );
     const res = await req.json();
-    results = res;
     return res;
   } catch (err) {
     console.log(err);
   }
-};
-export const findById = async (id: string) => {
-  console.log({ results, find: true });
-  const result = results.find((res: { id: string }) => res.id === id);
-  return result[0];
 };
 export const download = async (
   artist: string,
@@ -32,27 +25,24 @@ export const download = async (
   try {
     const url = `${config.API_HOST}/api/music/download?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
 
-    const response = await axios({
+    const patchResponse = await axios({
       method: "get",
       url: url,
-      responseType: "stream",
+      responseType: "json", // Axios parseará el JSON automáticamente
     });
-
-    // Axios en Node pone los headers en minúsculas
-    const total = parseInt(response.headers["content-length"] || "0", 10);
-    const durationTrack = parseInt(
-      response.headers["duration-track"] || "0",
-      10,
-    );
+    const response = await patchResponse.data;
+    const durationTrack = parseInt(response.meta_data.duration.seconds);
+    console.log({ response });
 
     let loaded = 0;
-    const chunks: any[] = [];
     let count = 0;
     let message: any;
     let intervalTime: NodeJS.Timeout;
     const clock = ["🕛", "🕒", "🕕", "🕘"][Math.floor(Date.now() / 10000) % 4];
     const sendDownloadMessage = async () => {
       const notifyTime = async () => {
+        const total = parseInt(response.meta_data.size);
+
         const elapsedTime = (Date.now() - startTime) / 1000; // segundos
         const speed = loaded / elapsedTime; // bytes/seg
         const eta = (total - loaded) / speed;
@@ -86,29 +76,19 @@ ${clock} Tu descarga estara lista en ${Math.ceil(eta / 60)} min aprox`,
       notifyTime();
       intervalTime = setInterval(notifyTime, 5000);
     };
-    setTimeout(sendDownloadMessage, 500);
-    return new Promise((resolve, reject) => {
-      response.data.on("data", (chunk: Buffer) => {
-        loaded += chunk.length;
-        chunks.push(chunk);
+    //setTimeout(sendDownloadMessage, 300);
 
-        if (total > 0) {
-          console.clear();
-        }
-      });
+    const soundTrack = response.audio_track;
 
-      response.data.on("end", () => {
-        const soundTrack = Buffer.concat(chunks);
-        clearInterval(intervalTime);
-        resolve({ soundTrack, durationTrack });
-      });
-
-      response.data.on("error", (err: Error) => {
-        reject(err);
-      });
-    });
+    return { soundTrack, durationTrack };
   } catch (err) {
     console.error("Error en la descarga del bot:", err);
     throw err;
   }
 };
+
+const MusicService = {
+  download,
+  search,
+};
+export default MusicService;
